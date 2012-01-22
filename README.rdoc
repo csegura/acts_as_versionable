@@ -1,0 +1,69 @@
+= Acts As Versionable
+
+ Minimalist versionable engine for rails > 3
+ Maintains versions in same table, just adding two new fields 
+
+ 
+
+=== Installation
+ 
+  gem 'acts_as_versionable' 
+
+  add two fields to your model 
+
+  version_number:integer
+  version_id:integer
+
+  class ActsAsVersionableDocuments < ActiveRecord::Migration
+    def self.up
+	  add_column :documents, :version_number, :default => 0
+	  add_column :documents, :version_id, :default => null
+	
+	  # optional indexes
+	  add_index :documents, :version_number, :name => "index_documents_on_version_number"
+	  add_index :documents, :version_id, :name => "index_documents_on_version_id"
+	  # optional unique :id, :version_number
+    end
+
+    def self.down
+      remove_column :documents, :version_number
+      remove_column :documents, :version_id
+    end
+  end
+	
+=== Example
+
+  class Document < ActiveRecord::Base
+    acts_as_versionable :limit => 3
+  end
+
+  # use scope to get top versions	
+  documents = Document.last_versions	 => scope that return top versions
+
+  # cerate first version	
+  document = Document.create(:title => 'title', :body => 'body')
+  document.version => 1
+  document.last_version => 1
+
+  # modify
+  document.title = 'new title'
+  document.save => true
+  
+  # new version was created
+  document.version => 2
+  document.last_version => 2
+  document.versions => Array(2)
+
+  # revert to version 1
+  document.revert_to_version(1) => #<Document ...>
+  document.version => 3	# after revert a new version is created with content of version 1
+  document.title => 'title'
+	
+  # get a version		
+  version2 = document.get_version 2 => #<Document ... version_number => 2>	
+  version2.version => 2	
+  version2.title => 'new title"		
+  version2.last_version => 4
+
+    
+
