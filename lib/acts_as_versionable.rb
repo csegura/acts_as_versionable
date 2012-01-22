@@ -4,6 +4,8 @@ module ActsAsVersionable
 
   class NoSuchVersionError < Exception
   end
+  class NonEditableVersionError < Exception
+  end
 
   extend ActiveSupport::Concern
 
@@ -16,6 +18,7 @@ module ActsAsVersionable
       self.max_versions = (options[:max_versions] || 10)
 
       after_save :create_new_version
+      before_validation :versionable_validation
 
       has_many :internal_versions,
                :class_name => self.name,
@@ -35,7 +38,7 @@ module ActsAsVersionable
   module InstanceMethods  
     def revert_to_version(number)
       version = get_version number
-      editable = last_version_editable
+      editable = editable_version
       copy_version_values version, editable
       editable.version_number = nil
       editable.version_id = nil
@@ -75,13 +78,13 @@ module ActsAsVersionable
       return 0 if versions.count == 0
       versions.first.version_number 
     end
+    
+    # return the last version editable
+    def editable_version
+      parent_version.nil? ? self : parent_version        
+    end    
 
     private
-
-    # return the last version editable
-    def last_version_editable
-      parent_version.nil? ? self : parent_version        
-    end
     
     # callback after save
     def create_new_version
@@ -105,6 +108,13 @@ module ActsAsVersionable
       columns.each {|c| to[c.name] = from[c.name] }
       to
     end
+    
+    def versionable_validation
+      if !new_record? && !versionable?
+        raise NonEditableVersionError, "Can't modify versioned record. Use version.editable_version!!"  
+      end   
+    end  
+    
   end
 
 end

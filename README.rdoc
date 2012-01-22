@@ -1,28 +1,29 @@
 = Acts As Versionable
 
- Minimalist versionable engine for rails > 3
- Maintains versions in same table, just adding two new fields 
+Minimalist versionable engine for rails > 3
 
- 
+Maintains versions in same table, just adding two new fields 
 
 === Installation
  
   gem 'acts_as_versionable' 
 
-  add two fields to your model 
+add two fields to your model 
 
   version_number:integer
   version_id:integer
 
+**Sample migration**
+
   class ActsAsVersionableDocuments < ActiveRecord::Migration
     def self.up
-	  add_column :documents, :version_number, :default => 0
-	  add_column :documents, :version_id, :default => null
-	
-	  # optional indexes
-	  add_index :documents, :version_number, :name => "index_documents_on_version_number"
-	  add_index :documents, :version_id, :name => "index_documents_on_version_id"
-	  # optional unique :id, :version_number
+      add_column :documents, :version_number, :default => 0
+      add_column :documents, :version_id, :default => null
+    
+      # optional indexes
+      add_index :documents, :version_number, :name => "index_documents_on_version_number"
+      add_index :documents, :version_id, :name => "index_documents_on_version_id"
+      # optional unique :id, :version_number
     end
 
     def self.down
@@ -30,17 +31,17 @@
       remove_column :documents, :version_id
     end
   end
-	
+    
 === Example
 
   class Document < ActiveRecord::Base
     acts_as_versionable :limit => 3
   end
 
-  # use scope to get top versions	
-  documents = Document.last_versions	 => scope that return top versions
+  # use scope to get top versions   
+  documents = Document.last_versions     => scope that return most recent versions
 
-  # cerate first version	
+  # create first version    
   document = Document.create(:title => 'title', :body => 'body')
   document.version => 1
   document.last_version => 1
@@ -56,14 +57,45 @@
 
   # revert to version 1
   document.revert_to_version(1) => #<Document ...>
-  document.version => 3	# after revert a new version is created with content of version 1
+  document.version => 3 # after revert a new version is created with content of version 1
   document.title => 'title'
-	
-  # get a version		
-  version2 = document.get_version 2 => #<Document ... version_number => 2>	
-  version2.version => 2	
-  version2.title => 'new title"		
+    
+  # get a version       
+  version2 = document.get_version 2 => #<Document ... version_number => 2>  
+  version2.version => 2 
+  version2.title => 'new title"     
   version2.last_version => 4
 
+  # you can't edit a version
+  version2 = document.get_version 2 
+  version2.title = "new version"
+  version2.save => raise NonEditableVersionError
+
+  version2.versionable? => false
+ 
+  # to edit a version you need get the editable_version
+  editable = version2.editable_version
+  editable.versionable? => true
+  editable.title = "new"
+  editable.save
+  editable.last_version => 5
+
+== How to contribute
+
+If you find what you might think is a bug:
+
+1. Check the GitHub issue tracker to see if anyone else has had the same issue.
+   http://github.com/csegura/acts_as_versionable/issues/
+2. If you don't see anything, create an issue with information on how to reproduce it.
+
+If you want to contribute an enhancement or a fix:
+
+1. Fork the project on github.
+   http://github.com/csegura/acts_as_versionable/
+2. Make your changes with tests.
+3. Commit the changes without making changes to the Rakefile, VERSION, or any other files that aren't related to your enhancement or fix
+4. Send a pull request.
+
+Copyright ©2012 Carlos Segura, released under the MIT license
     
 
