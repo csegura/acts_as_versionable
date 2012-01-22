@@ -35,8 +35,10 @@ add two fields to your model
 === Example
 
   class Document < ActiveRecord::Base
-    acts_as_versionable :limit => 3
+    acts_as_versionable :max_versions => 5
   end
+
+  # by default max_versions is 10
 
   # use scope to get top versions   
   documents = Document.last_versions     => scope that return most recent versions
